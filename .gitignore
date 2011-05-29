@@ -1,0 +1,9 @@
+*.beam
+.eunit
+deps/*
+apps/mqhub/ebin
+*~
+dev/*
+doc/*
+rel/mqhub
+
