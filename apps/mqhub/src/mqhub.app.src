@@ -1,0 +1,13 @@
+{application, mqhub,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  riak_core
+                 ]},
+  {mod, { mqhub_app, []}},
+  {env, []}
+ ]}.
