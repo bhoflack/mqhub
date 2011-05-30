@@ -20,10 +20,13 @@ start_link() ->
 %% ===================================================================
 
 init(_Args) ->
-    VMaster = { mqhub_vnode_master,
-                  {riak_core_vnode_master, start_link, [mqhub_vnode]},
-                  permanent, 5000, worker, [riak_core_vnode_master]},
+    QueueMaster = { mqhub_vnode_queue_master,
+                    {riak_core_vnode_master, start_link, [mqhub_queue_vnode]},
+                    permanent, 5000, worker, [riak_core_vnode_master]},
+    MessageMaster = { mqhub_vnode_message_master,
+                      {riak_core_vnode_master, start_link, [mqhub_message_vnode]},
+                      permanent, 5000, worker, [riak_core_vnode_master]},
 
     { ok,
         { {one_for_one, 5, 10},
-          [VMaster]}}.
+          [QueueMaster, MessageMaster]}}.

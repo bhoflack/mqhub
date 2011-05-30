@@ -23,7 +23,7 @@
 
 -record(state, {partition, messages}).
 
--define(MASTER, rts_stat_vnode_master).
+-define(MASTER, mqhub_message_vnode_master).
 -define(sync(PrefList, Command, Master),
         riak_core_vnode_master:sync_command(PrefList, Command, Master)).
 
@@ -42,7 +42,7 @@ get(IdxNode, Key) ->
 
 handle_command(ping, _Sender, State) ->
     {reply, {pong, State#state.partition}, State};
-handle_command({save, Key, Message}, _Sender, #state{messages=Messages}=State) ->
+handle_command({put, Key, Message}, _Sender, #state{messages=Messages}=State) ->
     {reply, ok, State#state{messages=dict:store(Key, Message, Messages)}};
 handle_command({get, Key}, _Sender, #state{messages=Messages}=State) ->
     Reply =

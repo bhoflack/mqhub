@@ -3,7 +3,8 @@
 -include("mqhub.hrl").
 
 -export([create_queue/2,
-         push/3]).
+         push/3,
+         pull/2]).
 
 -export([start_vnode/1,
          init/1,
@@ -22,7 +23,7 @@
 -record(state, {partition, queues, messages}).
 -include_lib("riak_core/include/riak_core_vnode.hrl").
 
--define(MASTER, rts_stat_vnode_master).
+-define(MASTER, mqhub_queue_vnode_master).
 -define(sync(PrefList, Command, Master),
         riak_core_vnode_master:sync_command(PrefList, Command, Master)).
 
@@ -39,16 +40,28 @@ create_queue(IdxNode, Queue) ->
 push(IdxNode, Queue, Message) ->
     ?sync(IdxNode, {push, Queue, Message}, ?MASTER).
 
+pull(IdxNode, Queue) ->
+    ?sync(IdxNode, {pull, Queue}, ?MASTER).
+
 handle_command(ping, _Sender, State) ->
     {reply, {pong, State#state.partition}, State};
 handle_command({create_queue, Queue}, _Sender, #state{queues=Queues}=State) ->
     {reply, ok, State#state{queues=dict:store(Queue, [], Queues)}};
 handle_command({push, Queue, Message}, _Sender, #state{queues=Queues}=State) ->
+    ?PRINT({pushing, Queue, Message}),
     QueuedMessages = case dict:find(Queue, Queues) of
-                         error -> dict:store(Queue, [Message], dict:new());
+                         error -> dict:store(Queue, [Message], Queues);
                          _ -> dict:append_list(Queue, [Message], Queues)
                      end,
-    {reply, ok, State#state{queues=QueuedMessages}, _Sender};
+    ?PRINT({queuedMessages, QueuedMessages}),
+    {reply, ok, State#state{queues=QueuedMessages}};
+handle_command({pull, Queue}, _Sender, #state{queues=Queues}=State) ->
+    QueuedMessages =
+        case dict:find(Queue, Queues) of
+            error -> not_found;
+            Messages -> Messages
+        end,
+    {reply, QueuedMessages, State#state{queues=dict:store(Queue, [], Queues)}};
 handle_command(Message, _Sender, State) ->
     ?PRINT({unhandled_command, Message}),
     {noreply, State}.

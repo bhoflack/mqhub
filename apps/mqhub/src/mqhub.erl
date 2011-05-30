@@ -4,7 +4,11 @@
 
 -export([
          ping/0,
-         create_queue/1
+         create_queue/1,
+         push/2,
+         pull/1,
+         get/1,
+         put/1
         ]).
 
 %% Public API
@@ -17,7 +21,34 @@ ping() ->
     riak_core_vnode_master:sync_spawn_command(IndexNode, ping, mqhub_vnode_master).
 
 create_queue(Name) ->
-    DocIdx = riak_core_util:chash_key({<<"queue">>, term_to_binary(Name)}),
-    PrefList = riak_core_apl:get_apl(DocIdx, 1, mqhub_queue),
+    IdxNode = get_idx_node(<<"queue">>, Name, mqhub_queue),
+    mqhub_queue_vnode:create_queue(IdxNode, Name).
+
+push(Name, Message) ->
+    IdxNode = get_idx_node(<<"queue">>, Name, mqhub_queue),
+    mqhub_queue_vnode:push(IdxNode, Name, Message).
+
+pull(Name) ->
+    IdxNode = get_idx_node(<<"queue">>, Name, mqhub_queue),
+    mqhub_queue_vnode:pull(IdxNode, Name).
+
+get(Key) ->
+    IdxNode = get_idx_node(<<"message">>, Key, mqhub_message),
+    mqhub_message_vnode:get(IdxNode, Key).
+
+put(Message) ->
+    Key = md5(Message),
+    ?PRINT(Key),
+    IdxNode = get_idx_node(<<"message">>, Key, mqhub_message),
+    mqhub_message_vnode:put(IdxNode, Key, Message).
+
+%% private functions
+get_idx_node(Bucket, Message, Service) ->
+    DocIdx = riak_core_util:chash_key({Bucket, md5(Message)}),
+    PrefList = riak_core_apl:get_apl(DocIdx, 1, Service),
     [IdxNode] = PrefList,
-    rts_entry_vnode:create_queue(IdxNode, Name).
+    IdxNode.
+
+md5(S) ->
+ string:to_upper(
+  lists:flatten([io_lib:format("~2.16.0b",[N]) || <<N>> <= erlang:md5(S)])).
