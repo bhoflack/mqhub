@@ -2,9 +2,9 @@
 -behaviour(riak_core_vnode).
 -include("mqhub.hrl").
 
--export([create_queue/2,
-         push/3,
-         pull/2]).
+-export([create_queue/3,
+         push/4,
+         pull/3]).
 
 -export([start_vnode/1,
          init/1,
@@ -34,34 +34,43 @@ start_vnode(I) ->
 init([Partition]) ->
     {ok, #state{partition=Partition, queues=dict:new()}}.
 
-create_queue(IdxNode, Queue) ->
-    ?sync(IdxNode, {create_queue, Queue}, ?MASTER).
+create_queue(Preflist, ReqID, Queue) ->
+    riak_core_vnode_master:command(Preflist,
+                                   {create_queue, ReqID, Queue},
+                                   {fsm, undefined, self()},
+                                   ?MASTER).
 
-push(IdxNode, Queue, Message) ->
-    ?sync(IdxNode, {push, Queue, Message}, ?MASTER).
+push(Preflist, ReqID, Queue, Message) ->
+    riak_core_vnode_master:command(Preflist,
+                                   {push, ReqID, Queue, Message},
+                                   {fsm, undefined, self()},
+                                   ?MASTER).
 
-pull(IdxNode, Queue) ->
-    ?sync(IdxNode, {pull, Queue}, ?MASTER).
+pull(Preflist, ReqID, Queue) ->
+    riak_core_vnode_master:command(Preflist,
+                                   {pull, ReqID, Queue},
+                                   {fsm, undefined, self()},
+                                   ?MASTER).
 
 handle_command(ping, _Sender, State) ->
     {reply, {pong, State#state.partition}, State};
-handle_command({create_queue, Queue}, _Sender, #state{queues=Queues}=State) ->
-    {reply, ok, State#state{queues=dict:store(Queue, [], Queues)}};
-handle_command({push, Queue, Message}, _Sender, #state{queues=Queues}=State) ->
+handle_command({create_queue, ReqID, Queue}, _Sender, #state{queues=Queues}=State) ->
+    {reply, {ok, ReqID}, State#state{queues=dict:store(Queue, [], Queues)}};
+handle_command({push, ReqID, Queue, Message}, _Sender, #state{queues=Queues}=State) ->
     ?PRINT({pushing, Queue, Message}),
     QueuedMessages = case dict:find(Queue, Queues) of
                          error -> dict:store(Queue, [Message], Queues);
                          _ -> dict:append_list(Queue, [Message], Queues)
                      end,
     ?PRINT({queuedMessages, QueuedMessages}),
-    {reply, ok, State#state{queues=QueuedMessages}};
-handle_command({pull, Queue}, _Sender, #state{queues=Queues}=State) ->
-    QueuedMessages =
+    {reply, {ok, ReqID}, State#state{queues=QueuedMessages}};
+handle_command({pull, ReqID, Queue}, _Sender, #state{queues=Queues}=State) ->
+    {ok, QueuedMessages} =
         case dict:find(Queue, Queues) of
             error -> not_found;
             Messages -> Messages
         end,
-    {reply, QueuedMessages, State#state{queues=dict:store(Queue, [], Queues)}};
+    {reply, {ok, ReqID, QueuedMessages}, State#state{queues=dict:store(Queue, [], Queues)}};
 handle_command(Message, _Sender, State) ->
     ?PRINT({unhandled_command, Message}),
     {noreply, State}.
