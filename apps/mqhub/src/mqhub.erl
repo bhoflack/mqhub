@@ -34,22 +34,15 @@ pull(Name) ->
     Message.
 
 get(Key) ->
-    IdxNode = get_idx_node(<<"message">>, Key, mqhub_message),
-    mqhub_message_vnode:get(IdxNode, Key).
+    {ok, Value} = with_command(fun() -> mqhub_message_fsm:get(self(), Key) end),
+    Value.
 
-put(Message) ->
-    Key = md5(Message),
+put(Value) ->
+    Key = md5(Value),
     ?PRINT(Key),
-    IdxNode = get_idx_node(<<"message">>, Key, mqhub_message),
-    mqhub_message_vnode:put(IdxNode, Key, Message).
+    with_command(fun() -> mqhub_message_fsm:put(self(), Key, Value) end).
 
 %% private functions
-get_idx_node(Bucket, Message, Service) ->
-    DocIdx = riak_core_util:chash_key({Bucket, md5(Message)}),
-    PrefList = riak_core_apl:get_apl(DocIdx, 1, Service),
-    [IdxNode] = PrefList,
-    IdxNode.
-
 md5(S) ->
  string:to_upper(
   lists:flatten([io_lib:format("~2.16.0b",[N]) || <<N>> <= erlang:md5(S)])).

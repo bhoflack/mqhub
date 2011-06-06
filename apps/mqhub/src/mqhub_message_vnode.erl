@@ -2,8 +2,8 @@
 -behaviour(riak_core_vnode).
 -include("mqhub.hrl").
 
--export([get/2,
-         put/3]).
+-export([get/3,
+         put/4]).
 
 -export([start_vnode/1,
          init/1,
@@ -34,17 +34,23 @@ start_vnode(I) ->
 init([Partition]) ->
     {ok, #state{partition=Partition, messages=dict:new()}}.
 
-put(IdxNode, Key, Message) ->
-    ?sync(IdxNode, {put, Key, Message}, ?MASTER).
+put(Preflist, ReqID, Key, Message) ->
+    ?PRINT({put, Key, Message}),
+    riak_core_vnode_master:command(Preflist,
+                                   {put, ReqID, Key, Message},
+                                   ?MASTER).
 
-get(IdxNode, Key) ->
-    ?sync(IdxNode, {get, Key}, ?MASTER).
+get(Preflist, ReqID, Key) ->
+    ?PRINT({get, Key}),
+    riak_core_vnode_master:command(Preflist,
+                                   {get, ReqID, Key},
+                                   ?MASTER).
 
 handle_command(ping, _Sender, State) ->
     {reply, {pong, State#state.partition}, State};
-handle_command({put, Key, Message}, _Sender, #state{messages=Messages}=State) ->
-    {reply, ok, State#state{messages=dict:store(Key, Message, Messages)}};
-handle_command({get, Key}, _Sender, #state{messages=Messages}=State) ->
+handle_command({put, ReqID, Key, Message}, _Sender, #state{messages=Messages}=State) ->
+    {reply, {ok, ReqID}, State#state{messages=dict:store(Key, Message, Messages)}};
+handle_command({get, ReqID, Key}, _Sender, #state{messages=Messages}=State) ->
     Reply =
         case dict:find(Key, Messages) of
             error ->
@@ -52,7 +58,7 @@ handle_command({get, Key}, _Sender, #state{messages=Messages}=State) ->
             Found ->
                 Found
         end,
-    {reply, Reply, State};
+    {reply, {ok, ReqID, Reply}, State};
 handle_command(Message, _Sender, State) ->
     ?PRINT({unhandled_command, Message}),
     {noreply, State}.
