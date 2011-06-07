@@ -18,3 +18,8 @@ You will have 3 servers for development testing.  Start the three servers with:
 Now you have 3 servers working together.  To join the session start:
 
     dev/dev1/bin/mqhub attach
+
+And you can start pushing and pulling messages:
+
+    mqhub:push("brh/queue/a", <<"hello world">>).
+    mqhub:pull("brh/queue/a").

@@ -2,13 +2,13 @@
 -include("mqhub.hrl").
 -include_lib("riak_core/include/riak_core_vnode.hrl").
 
+-compile({no_auto_import,[get/1]}).
+
 -export([
          ping/0,
          create_queue/1,
          push/2,
-         pull/1,
-         get/1,
-         put/1
+         pull/1
         ]).
 
 -define(TIMEOUT, 5000).
@@ -32,7 +32,7 @@ push(Name, Message) ->
 
 pull(Name) ->
     {ok, Refs} = with_command(fun() -> mqhub_queue_fsm:pull(self(), Name) end),
-    lists:map(fun(Ref) -> mqhub:get(Ref) end, Refs).
+    lists:map(fun(Ref) -> get(Ref) end, Refs).
 
 get(Key) ->
     {ok, Value} = with_command(fun() -> mqhub_message_fsm:get(self(), Key) end),
