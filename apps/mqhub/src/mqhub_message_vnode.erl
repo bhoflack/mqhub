@@ -36,20 +36,28 @@ init([Partition]) ->
 
 put(Preflist, ReqID, Key, Message) ->
     ?PRINT({put, Key, Message}),
-    riak_core_vnode_master:command(Preflist,
-                                   {put, ReqID, Key, Message},
-                                   ?MASTER).
+    Resp = riak_core_vnode_master:command(Preflist,
+                                          {put, ReqID, Key, Message},
+                                          {fsm, undefined, self()},
+                                          ?MASTER),
+    ?PRINT(Resp),
+    Resp.
 
 get(Preflist, ReqID, Key) ->
     ?PRINT({get, Key}),
     riak_core_vnode_master:command(Preflist,
                                    {get, ReqID, Key},
+                                   {fsm, undefined, self()},
                                    ?MASTER).
 
 handle_command(ping, _Sender, State) ->
     {reply, {pong, State#state.partition}, State};
-handle_command({put, ReqID, Key, Message}, _Sender, #state{messages=Messages}=State) ->
-    {reply, {ok, ReqID}, State#state{messages=dict:store(Key, Message, Messages)}};
+handle_command({put, ReqID, Key, Message},
+               _Sender,
+               #state{messages=Messages0}=State) ->
+    Messages = dict:store(Key, Message, Messages0),
+    ?PRINT({put, Messages}),
+    {reply, {ok, ReqID}, State#state{messages=Messages}};
 handle_command({get, ReqID, Key}, _Sender, #state{messages=Messages}=State) ->
     Reply =
         case dict:find(Key, Messages) of

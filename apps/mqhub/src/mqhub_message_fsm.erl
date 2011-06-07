@@ -72,6 +72,7 @@ execute(timeout, State0=#state{req_id=ReqId,
                                op=Op,
                                key=Key,
                                value=Value}) ->
+    ?PRINT({execute, State0}),
     case Value of
         undefined ->
             mqhub_message_vnode:Op(PrefList, ReqId, Key);
@@ -80,13 +81,13 @@ execute(timeout, State0=#state{req_id=ReqId,
     end,
     {next_state, waiting, State0}.
 
-waiting({ok, ReqID}, State0=#state{from=From, num=Num0}) ->
+waiting({ok, ReqID}, State0=#state{from=From, num=Num0, key=Key}) ->
     Num = Num0 + 1,
     ?PRINT(Num),
     State = State0#state{num=Num},
     if
         Num =:= ?W ->
-            From ! {ReqID, ok},
+            From ! {ReqID, ok, Key},
             {stop, normal, State};
         true -> {next_state, waiting, State}
     end;

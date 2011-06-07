@@ -27,11 +27,12 @@ create_queue(Name) ->
     with_command(fun() -> mqhub_queue_fsm:create_queue(self(), Name) end).
 
 push(Name, Message) ->
-    with_command(fun() -> mqhub_queue_fsm:push(self(), Name, Message) end).
+    {ok, Key} = put(Message),
+    with_command(fun() -> mqhub_queue_fsm:push(self(), Name, Key) end).
 
 pull(Name) ->
-    {ok, Message} = with_command(fun() -> mqhub_queue_fsm:pull(self(), Name) end),
-    Message.
+    {ok, Refs} = with_command(fun() -> mqhub_queue_fsm:pull(self(), Name) end),
+    lists:map(fun(Ref) -> mqhub:get(Ref) end, Refs).
 
 get(Key) ->
     {ok, Value} = with_command(fun() -> mqhub_message_fsm:get(self(), Key) end),
