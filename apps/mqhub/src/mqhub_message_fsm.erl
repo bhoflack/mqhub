@@ -91,7 +91,7 @@ waiting({ok, ReqID}, State0=#state{from=From, num=Num0, key=Key}) ->
             {stop, normal, State};
         true -> {next_state, waiting, State}
     end;
-waiting({ok, ReqID, Value}, State0=#state{from=From, num=Num0, replies=Replies}) ->
+waiting({ok, ReqID, Value}, State0=#state{from=From, num=Num0, replies=Replies, key=Key}) ->
     Num = Num0 + 1,
     State = State0#state{num=Num},
     if
@@ -100,7 +100,8 @@ waiting({ok, ReqID, Value}, State0=#state{from=From, num=Num0, replies=Replies})
             Reply =
                 case lists:any(different(Value), Replies) of
                     true ->
-                        Replies;
+                        [Verified | _] = lists:filter(fun(Msg) -> mqhub_util:md5(Msg) =:= Key end, Replies),
+                        Verified;
                     false ->
                         Value
                 end,

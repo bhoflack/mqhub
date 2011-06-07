@@ -11,9 +11,6 @@
          pull/1
         ]).
 
--define(TIMEOUT, 5000).
-
-
 %% Public API
 
 % @doc Pings a random vnode to make sure communication is functional
@@ -24,35 +21,20 @@ ping() ->
     riak_core_vnode_master:sync_spawn_command(IndexNode, ping, mqhub_vnode_master).
 
 create_queue(Name) ->
-    with_command(fun() -> mqhub_queue_fsm:create_queue(self(), Name) end).
+    mqhub_util:with_command(fun() -> mqhub_queue_fsm:create_queue(self(), Name) end).
 
 push(Name, Message) ->
     {ok, Key} = put(Message),
-    with_command(fun() -> mqhub_queue_fsm:push(self(), Name, Key) end).
+    mqhub_util:with_command(fun() -> mqhub_queue_fsm:push(self(), Name, Key) end).
 
 pull(Name) ->
-    {ok, Refs} = with_command(fun() -> mqhub_queue_fsm:pull(self(), Name) end),
+    {ok, Refs} = mqhub_util:with_command(fun() -> mqhub_queue_fsm:pull(self(), Name) end),
     lists:map(fun(Ref) -> get(Ref) end, Refs).
 
 get(Key) ->
-    {ok, Value} = with_command(fun() -> mqhub_message_fsm:get(self(), Key) end),
+    {ok, Value} = mqhub_util:with_command(fun() -> mqhub_message_fsm:get(self(), Key) end),
     Value.
 
 put(Value) ->
-    Key = md5(Value),
-    ?PRINT(Key),
-    with_command(fun() -> mqhub_message_fsm:put(self(), Key, Value) end).
-
-%% private functions
-md5(S) ->
- string:to_upper(
-  lists:flatten([io_lib:format("~2.16.0b",[N]) || <<N>> <= erlang:md5(S)])).
-
-with_command(C) ->
-    C(),
-    receive
-        {_ReqID, ok} -> ok;
-        {_ReqID, ok, Val} -> {ok, Val}
-    after ?TIMEOUT ->
-            {error, timeout}
-    end.
+    Key = mqhub_util:md5(Value),
+    mqhub_util:with_command(fun() -> mqhub_message_fsm:put(self(), Key, Value) end).
