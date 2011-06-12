@@ -23,3 +23,17 @@ And you can start pushing and pulling messages:
 
     mqhub:push("brh/queue/a", <<"hello world">>).
     mqhub:pull("brh/queue/a").
+
+
+### Http REST api
+The app http contains the REST api.  This is automatically started on all hosts when you start mqhub.
+
+To push a message execute:
+
+    curl -X PUT -H 'Content-Type: application/json' localhost:8000/brh/queue/a -d "hello world"
+
+To pull the messages execute:
+
+    curl localhost:8000/brh/queue/a
+
+

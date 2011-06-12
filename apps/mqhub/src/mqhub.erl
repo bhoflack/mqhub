@@ -29,7 +29,7 @@ push(Name, Message) ->
 
 pull(Name) ->
     {ok, Refs} = mqhub_util:with_command(fun() -> mqhub_queue_fsm:pull(self(), Name) end),
-    lists:map(fun(Ref) -> get(Ref) end, Refs).
+    {ok, lists:map(fun(Ref) -> {ok, Msg} = get(Ref), Msg end, Refs)}.
 
 get(Key) ->
     {ok, Value} = mqhub_util:with_command(fun() -> mqhub_message_fsm:get(self(), Key) end),

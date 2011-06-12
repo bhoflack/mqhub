@@ -29,5 +29,4 @@ from_json(ReqData, Ctx) ->
 to_json(ReqData, Ctx) ->
     Queue = wrq:path(ReqData),
     {ok, Messages} = mqhub:pull(Queue),
-    mochijson2:encode(Messages),
-    {ok, ReqData, Ctx}.
+    {mochijson2:encode(Messages), ReqData, Ctx}.
