@@ -65,12 +65,12 @@ handle_command({push, ReqID, Queue, Message}, _Sender, #state{queues=Queues}=Sta
     ?PRINT({queuedMessages, QueuedMessages}),
     {reply, {ok, ReqID}, State#state{queues=QueuedMessages}};
 handle_command({pull, ReqID, Queue}, _Sender, #state{queues=Queues}=State) ->
-    {ok, QueuedMessages} =
-        case dict:find(Queue, Queues) of
-            error -> not_found;
-            Messages -> Messages
-        end,
-    {reply, {ok, ReqID, QueuedMessages}, State#state{queues=dict:store(Queue, [], Queues)}};
+    case dict:find(Queue, Queues) of
+        error -> {reply, {error, ReqID, not_found}, State};
+        {ok, []} -> {reply, {error, ReqID, empty}, State};
+        {ok, [Message | RestOfMessages]} -> {reply, {ok, ReqID, [Message]},
+                                            State#state{queues=dict:store(Queue, RestOfMessages, Queues)}}
+    end;
 handle_command(Message, _Sender, State) ->
     ?PRINT({unhandled_command, Message}),
     {noreply, State}.

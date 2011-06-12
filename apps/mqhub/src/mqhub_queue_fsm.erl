@@ -93,7 +93,7 @@ waiting({ok, ReqID}, State0=#state{from=From, num=Num0}) ->
         true -> {next_state, waiting, State}
     end;
 
-waiting({ok, ReqID, Val}, State0=#state{op=pull, from=From, num=Num0, replies=Replies0}) ->
+waiting({Status, ReqID, Val}, State0=#state{op=pull, from=From, num=Num0, replies=Replies0}) ->
     Num = Num0 + 1,
     ?PRINT(Num),
     Replies = [Val|Replies0],
@@ -107,7 +107,7 @@ waiting({ok, ReqID, Val}, State0=#state{op=pull, from=From, num=Num0, replies=Re
                     false ->
                         Val
                 end,
-            From ! {ReqID, ok, Reply},
+            From ! {ReqID, Status, Reply},
             {stop, normal, State};
         true -> {next_state, waiting, State}
     end.
