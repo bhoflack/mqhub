@@ -28,5 +28,7 @@ from_json(ReqData, Ctx) ->
 
 to_json(ReqData, Ctx) ->
     Queue = wrq:path(ReqData),
-    {ok, Messages} = mqhub:pull(Queue),
-    {mochijson2:encode(Messages), ReqData, Ctx}.
+    case mqhub:pull(Queue) of
+        {ok, Messages} -> {mochijson2:encode(Messages), ReqData, Ctx};
+        {error, Reason} -> {atom_to_list(Reason), ReqData, Ctx}
+    end.
