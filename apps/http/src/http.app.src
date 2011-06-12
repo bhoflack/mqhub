@@ -1,0 +1,16 @@
+{application, http,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {modules, [http_app,
+             http_server_sup,
+             queue_resource]},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  mqhub
+                 ]},
+  {mod, { http_app, []}},
+  {env, []}
+]}.
