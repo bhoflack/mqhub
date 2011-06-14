@@ -24,8 +24,6 @@
 -record(state, {partition, messages}).
 
 -define(MASTER, mqhub_message_vnode_master).
--define(sync(PrefList, Command, Master),
-        riak_core_vnode_master:sync_command(PrefList, Command, Master)).
 
 %% API
 start_vnode(I) ->

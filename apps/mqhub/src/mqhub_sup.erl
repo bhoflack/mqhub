@@ -26,7 +26,10 @@ init(_Args) ->
     MessageMaster = { mqhub_vnode_message_master,
                       {riak_core_vnode_master, start_link, [mqhub_message_vnode]},
                       permanent, 5000, worker, [riak_core_vnode_master]},
+    TopicMaster = { mqhub_vnode_topic_master,
+                    {riak_core_vnode_master, start_link, [mqhub_topic_vnode]},
+                    permanent, 5000, worker, [riak_core_vnode_master]},
 
     { ok,
         { {one_for_one, 5, 10},
-          [QueueMaster, MessageMaster]}}.
+          [QueueMaster, MessageMaster, TopicMaster]}}.

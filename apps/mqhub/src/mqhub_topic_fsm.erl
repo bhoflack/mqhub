@@ -1,12 +1,12 @@
--module(mqhub_queue_fsm).
+-module(mqhub_topic_fsm).
 -behaviour(gen_fsm).
 -include("mqhub.hrl").
 
 %% API
--export([start_link/4,
-         create_queue/2,
-         push/3,
-         pull/2]).
+-export([create_topic/2,
+         subscribe/3,
+         unsubscribe/3,
+         listeners/2]).
 
 %% Callbacks
 -export([init/1,
@@ -24,61 +24,66 @@
 -record(state, {req_id,
                 from,
                 op,
-                queue,
+                topic,
                 arg,
                 preflist,
                 num=0,
                 replies=[]}).
 
+
 %%% ==========================================================
 %%% API
 %%% ==========================================================
-start_link(ReqId, From, Queue, Operation) ->
-    start_link(ReqId, From, Queue, Operation, undefined).
-
-start_link(ReqId, From, Queue, Operation, Arg) ->
-    gen_fsm:start_link(?MODULE, [ReqId, From, Operation, Queue, Arg], []).
-
-create_queue(From, Name) ->
+create_topic(From, Topic) ->
     ReqId = mqhub_util:mk_reqid(),
-    start_link(ReqId, From, Name, create_queue).
+    start_link(ReqId, From, Topic, create_topic).
 
-push(From, Queue, Message) ->
+subscribe(From, Topic, Listener) ->
     ReqId = mqhub_util:mk_reqid(),
-    start_link(ReqId, From, Queue, push, Message).
+    start_link(ReqId, From, Topic, subscribe, Listener).
 
-pull(From, Queue) ->
+unsubscribe(From, Topic, Listener) ->
     ReqId = mqhub_util:mk_reqid(),
-    start_link(ReqId, From, Queue, pull).
+    start_link(ReqId, From, Topic, unsubscribe, Listener).
+
+listeners(From, Topic) ->
+    ReqId = mqhub_util:mk_reqid(),
+    start_link(ReqId, From, Topic, listeners).
+
+start_link(ReqId, From, Topic, Operation) ->
+    start_link(ReqId, From, Topic, Operation, undefined).
+
+start_link(ReqId, From, Topic, Operation, Arg) ->
+    gen_fsm:start_link(?MODULE, [ReqId, From, Topic, Operation, Arg], []).
 
 %%% ==========================================================
 %%% States
 %%% ==========================================================
-init([ReqId, From, Operation, Queue, Arg]) ->
+init([ReqId, From, Topic, Operation, Arg]) ->
     State = #state{req_id=ReqId,
                    from=From,
                    op=Operation,
-                   queue=Queue,
+                   topic=Topic,
                    arg=Arg},
     {ok, prepare, State, 0}.
 
-prepare(timeout, State0=#state{queue=Queue}) ->
-    DocIdx = riak_core_util:chash_key({<<"queue">>,
-                                       list_to_binary(Queue)}),
-    PrefList = riak_core_apl:get_apl(DocIdx, ?N, mqhub_queue),
-    State=State0#state{preflist=PrefList},
+prepare(timeout, State0=#state{topic=Topic}) ->
+    DocIdx = riak_core_util:chash_key({<<"topic">>,
+                                       list_to_binary(Topic)}),
+    PrefList = riak_core_apl:get_apl(DocIdx, ?N, mqhub_topic),
+    State = State0#state{preflist=PrefList},
     {next_state, execute, State, 0}.
 
-execute(timeout, State0=#state{req_id=ReqID,
+execute(timeout, State0=#state{req_id=ReqId,
                                preflist=PrefList,
                                op=Op,
-                               queue=Queue,
+                               topic=Topic,
                                arg=Arg}) ->
     case Arg of
         undefined ->
-            mqhub_queue_vnode:Op(PrefList, ReqID, Queue);
+            mqhub_topic_vnode:Op(PrefList, ReqId, Topic);
         _ ->
-            mqhub_queue_vnode:Op(PrefList, ReqID, Queue, Arg)
+            mqhub_topic_vnode:Op(PrefList, ReqId, Topic, Arg)
     end,
     {next_state, waiting, State0}.
 
@@ -92,11 +97,9 @@ waiting({ok, ReqID}, State0=#state{from=From, num=Num0}) ->
             {stop, normal, State};
         true -> {next_state, waiting, State}
     end;
-
-waiting({Status, ReqID, Val}, State0=#state{op=pull, from=From, num=Num0, replies=Replies0}) ->
+waiting({Status, ReqId, Val}, State0=#state{from=From, num=Num0, replies=Replies0}) ->
     Num = Num0 + 1,
-    ?PRINT(Num),
-    Replies = [Val|Replies0],
+    Replies = [Val | Replies0],
     State = State0#state{num=Num, replies=Replies},
     if
         Num =:= ?R ->
@@ -107,7 +110,7 @@ waiting({Status, ReqID, Val}, State0=#state{op=pull, from=From, num=Num0, replie
                     false ->
                         Val
                 end,
-            From ! {ReqID, Status, Reply},
+            From ! {ReqId, Status, Reply},
             {stop, normal, State};
         true -> {next_state, waiting, State}
     end.

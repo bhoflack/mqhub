@@ -18,6 +18,9 @@ start(_StartType, _StartArgs) ->
             ok = riak_core:register_vnode_module(mqhub_message_vnode),
             ok = riak_core_node_watcher:service_up(mqhub_message, self()),
 
+            ok = riak_core:register_vnode_module(mqhub_topic_vnode),
+            ok = riak_core_node_watcher:service_up(mqhub_topic, self()),
+
             {ok, Pid};
         {error, Reason} ->
             {error, Reason}

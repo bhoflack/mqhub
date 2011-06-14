@@ -24,6 +24,26 @@ And you can start pushing and pulling messages:
     mqhub:push("brh/queue/a", <<"hello world">>).
     mqhub:pull("brh/queue/a").
 
+### Topics
+Topics allow you to publish a message to multiple queues at the same time.
+
+Creating a topic can be done by:
+
+    mqhub:create_topic("brh/topic/test").
+
+You can add subscribers to a topic by subscribing them:
+
+    mqhub:subscribe("brh/topic/test", "brh/queue/a").
+    mqhub:subscribe("brh/topic/test", "brh/queue/b").
+
+Now both queues will get messages sent to *brh/topic/test*.  To publish a message to them:
+
+    mqhub:publish("brh/topic/test", <<"hello">>).
+    mqhub:publish("brh/topic/test", <<"world">>).
+
+This will publish two messages to both queues.  You can verify by pulling from both queues:
+
+    mqhub:pull("brh/queue/a").
 
 ### Http REST api
 The app http contains the REST api.  This is automatically started on all hosts when you start mqhub.

@@ -8,7 +8,12 @@
          ping/0,
          create_queue/1,
          push/2,
-         pull/1
+         pull/1,
+         create_topic/1,
+         subscribe/2,
+         unsubscribe/2,
+         publish/2,
+         listeners/1
         ]).
 
 %% Public API
@@ -25,7 +30,7 @@ create_queue(Name) ->
 
 push(Name, Message) ->
     {ok, Key} = put(Message),
-    mqhub_util:with_command(fun() -> mqhub_queue_fsm:push(self(), Name, Key) end).
+    push_key(Name, Key).
 
 pull(Name) ->
     case mqhub_util:with_command(fun() -> mqhub_queue_fsm:pull(self(), Name) end) of
@@ -33,6 +38,31 @@ pull(Name) ->
         {error, Reason} -> {error, Reason}
     end.
 
+create_topic(Topic) ->
+    mqhub_util:with_command(fun() -> mqhub_topic_fsm:create_topic(self(), Topic) end).
+
+subscribe(Topic, Listener) ->
+    mqhub_util:with_command(fun() -> mqhub_topic_fsm:subscribe(self(), Topic, Listener) end).
+
+unsubscribe(Topic, Listener) ->
+    mqhub_util:with_command(fun() -> mqhub_topic_fsm:unsubscribe(self(), Topic, Listener) end).
+
+publish(Topic, Message) ->
+    case listeners(Topic) of
+        {ok, Listeners} ->
+            {ok, Key} = put(Message),
+            lists:map(fun(Listener) -> push_key(Listener, Key) end, Listeners);
+        {error, Reason} -> {error, Reason}
+    end.
+
+%% not exported
+push_key(Name, Key) ->
+    mqhub_util:with_command(fun() -> mqhub_queue_fsm:push(self(), Name, Key) end).
+
+listeners(Topic) ->
+    mqhub_util:with_command(fun() -> mqhub_topic_fsm:listeners(self(), Topic) end).
+
+%% Private API
 get(Key) ->
     {ok, Value} = mqhub_util:with_command(fun() -> mqhub_message_fsm:get(self(), Key) end),
     Value.

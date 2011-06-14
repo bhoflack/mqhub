@@ -20,12 +20,10 @@
          encode_handoff_item/2,
          handle_exit/3]).
 
--record(state, {partition, queues, messages}).
+-record(state, {partition, queues}).
 -include_lib("riak_core/include/riak_core_vnode.hrl").
 
 -define(MASTER, mqhub_queue_vnode_master).
--define(sync(PrefList, Command, Master),
-        riak_core_vnode_master:sync_command(PrefList, Command, Master)).
 
 %% API
 start_vnode(I) ->
