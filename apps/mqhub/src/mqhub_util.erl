@@ -12,8 +12,8 @@ md5(S) ->
 with_command(C) ->
     C(),
     receive
-        {_ReqID, ok} -> ok;
-        {_ReqID, ok, Val} -> {ok, Val}
+        {_ReqID, Status} -> Status;
+        {_ReqID, Status, Val} -> {Status, Val}
     after ?TIMEOUT ->
             {error, timeout}
     end.

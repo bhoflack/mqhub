@@ -63,8 +63,7 @@ init([ReqId, From, Operation, Queue, Arg]) ->
     {ok, prepare, State, 0}.
 
 prepare(timeout, State0=#state{queue=Queue}) ->
-    DocIdx = riak_core_util:chash_key({<<"queue">>,
-                                       list_to_binary(Queue)}),
+    DocIdx = riak_core_util:chash_key({<<"queue">>, Queue}),
     PrefList = riak_core_apl:get_apl(DocIdx, ?N, mqhub_queue),
     State=State0#state{preflist=PrefList},
     {next_state, execute, State, 0}.

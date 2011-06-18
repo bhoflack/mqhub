@@ -68,8 +68,7 @@ init([ReqId, From, Topic, Operation, Arg]) ->
     {ok, prepare, State, 0}.
 
 prepare(timeout, State0=#state{topic=Topic}) ->
-    DocIdx = riak_core_util:chash_key({<<"topic">>,
-                                       list_to_binary(Topic)}),
+    DocIdx = riak_core_util:chash_key({<<"topic">>, Topic}),
     PrefList = riak_core_apl:get_apl(DocIdx, ?N, mqhub_topic),
     State = State0#state{preflist=PrefList},
     {next_state, execute, State, 0}.
@@ -89,7 +88,7 @@ execute(timeout, State0=#state{req_id=ReqId,
 
 waiting({ok, ReqID}, State0=#state{from=From, num=Num0}) ->
     Num = Num0 + 1,
-    ?PRINT(Num),
+    ?PRINT({waiting, Num}),
     State = State0#state{num=Num},
     if
         Num =:= ?W ->
@@ -99,6 +98,7 @@ waiting({ok, ReqID}, State0=#state{from=From, num=Num0}) ->
     end;
 waiting({Status, ReqId, Val}, State0=#state{from=From, num=Num0, replies=Replies0}) ->
     Num = Num0 + 1,
+    ?PRINT({waiting, Num}),
     Replies = [Val | Replies0],
     State = State0#state{num=Num, replies=Replies},
     if
@@ -110,6 +110,7 @@ waiting({Status, ReqId, Val}, State0=#state{from=From, num=Num0, replies=Replies
                     false ->
                         Val
                 end,
+            ?PRINT({reply, Reply, to, From}),
             From ! {ReqId, Status, Reply},
             {stop, normal, State};
         true -> {next_state, waiting, State}

@@ -1,4 +1,4 @@
--module(queue_resource).
+-module(topic_listener_resource).
 -export([init/1,
          allowed_methods/2,
          content_types_accepted/2,
@@ -21,14 +21,18 @@ content_types_provided(ReqData, State) ->
     {[{"application/json", to_json}], ReqData, State}.
 
 from_json(ReqData, Ctx) ->
-    Queue = list_to_binary(wrq:path(ReqData)),
-    Body = wrq:req_body(ReqData),
-    mqhub:push(Queue, Body),
+    Topic = topic(ReqData),
+    Listener = wrq:req_body(ReqData),
+    mqhub:subscribe(Topic, Listener),
     {ok, ReqData, Ctx}.
 
 to_json(ReqData, Ctx) ->
-    Queue = list_to_binary(wrq:path(ReqData)),
-    case mqhub:pull(Queue) of
-        {ok, Messages} -> {mochijson2:encode(Messages), ReqData, Ctx};
-        {error, Reason} -> {atom_to_list(Reason), ReqData, Ctx}
-    end.
+    Topic = topic(ReqData),
+    {ok, Listeners} = mqhub:listeners(Topic),
+    {mochijson2:encode(Listeners), ReqData, Ctx}.
+
+topic(ReqData) ->
+    Username = wrq:path_info(username, ReqData),
+    TopicName = wrq:path_info(topic, ReqData),
+    list_to_binary("/" ++ Username ++ "/topic/" ++ TopicName).
+

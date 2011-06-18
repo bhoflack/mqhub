@@ -63,25 +63,17 @@ handle_command({create_topic, ReqID, Topic}, _Sender, #state{topics=Topics}=Stat
     ?PRINT({create_topic, ReqID, Topic}),
     {reply, {ok, ReqID}, State#state{topics=dict:store(Topic, [], Topics)}};
 handle_command({subscribe, ReqID, Topic, Listener}, _Sender, #state{topics=Topics}=State) ->
-    case dict:find(Topic, Topics) of
-        error -> {reply, {error, ReqID, topic_not_found}, State};
-        _ -> {reply,
-              {ok, ReqID},
-              State#state{topics=dict:append_list(Topic, [Listener], Topics)}}
-    end;
+    {reply, {ok, ReqID}, State#state{topics=dict:append(Topic, Listener, Topics)}};
 handle_command({unsubscribe, ReqID, Topic, Listener}, _Sender, #state{topics=Topics}=State) ->
     case dict:find(Topic, Topics) of
         error -> {reply, {error, ReqID, topic_not_found}, State};
-        Listeners -> {reply,
-                      {ok, ReqID},
-                      State#state{topics=dict:append(Topic, lists:delete(Listener, Listeners), Topics)}}
+        Listeners -> {reply, {ok, ReqID}, State#state{topics=dict:append(Topic, lists:delete(Listener, Listeners), Topics)}}
     end;
 handle_command({listeners, ReqID, Topic}, _Sender, #state{topics=Topics}=State) ->
+    ?PRINT({listeners, ReqID, Topic, Topics}),
     case dict:find(Topic, Topics) of
         error -> {reply, {error, ReqID, topic_not_found}, State};
-        {ok, Listeners} -> {reply,
-                      {ok, ReqID, Listeners},
-                      State}
+        {ok, Listeners} -> {reply, {ok, ReqID, Listeners}, State}
     end;
 
 handle_command(Message, _Sender, State) ->

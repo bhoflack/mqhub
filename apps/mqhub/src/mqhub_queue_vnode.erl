@@ -56,10 +56,7 @@ handle_command({create_queue, ReqID, Queue}, _Sender, #state{queues=Queues}=Stat
     {reply, {ok, ReqID}, State#state{queues=dict:store(Queue, [], Queues)}};
 handle_command({push, ReqID, Queue, Message}, _Sender, #state{queues=Queues}=State) ->
     ?PRINT({pushing, Queue, Message}),
-    QueuedMessages = case dict:find(Queue, Queues) of
-                         error -> dict:store(Queue, [Message], Queues);
-                         _ -> dict:append_list(Queue, [Message], Queues)
-                     end,
+    QueuedMessages = dict:append(Queue, Message, Queues),
     ?PRINT({queuedMessages, QueuedMessages}),
     {reply, {ok, ReqID}, State#state{queues=QueuedMessages}};
 handle_command({pull, ReqID, Queue}, _Sender, #state{queues=Queues}=State) ->
