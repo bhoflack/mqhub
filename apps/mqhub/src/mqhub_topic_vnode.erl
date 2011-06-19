@@ -67,7 +67,10 @@ handle_command({subscribe, ReqID, Topic, Listener}, _Sender, #state{topics=Topic
 handle_command({unsubscribe, ReqID, Topic, Listener}, _Sender, #state{topics=Topics}=State) ->
     case dict:find(Topic, Topics) of
         error -> {reply, {error, ReqID, topic_not_found}, State};
-        Listeners -> {reply, {ok, ReqID}, State#state{topics=dict:append(Topic, lists:delete(Listener, Listeners), Topics)}}
+        {ok, Listeners} ->
+            WithoutListener = lists:delete(Listener, Listeners),
+            Topics1 = dict:store(Topic, WithoutListener, Topics),
+            {reply, {ok, ReqID}, State#state{topics=Topics1}}
     end;
 handle_command({listeners, ReqID, Topic}, _Sender, #state{topics=Topics}=State) ->
     ?PRINT({listeners, ReqID, Topic, Topics}),
