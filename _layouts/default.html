@@ -1,22 +1,32 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset='utf-8'>
-  <title>Sonic Queue, {{page.title}}</title>
+  <head>
+    <meta charset='utf-8'>
+    <title>Sonic Queue, {{page.title}}</title>
+  </head>
 
-</head>
+  <body>
+    <div id="main">
+      <div id="header" class="basic" style="margin-bottom:20px">
+        <div class="logo">Sonic Queue</div>
+      </div>
 
-<body>
-  <div id="main">
-    <div id="header" class="basic" style="margin-bottom:20px">
-      <div class="logo">Sonic Queue</div>
+      <div id="content" class="site">
+
+        {{ content }}
+
+      </div>
     </div>
+  </body>
+  <script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-24064402-1']);
+  _gaq.push(['_trackPageview']);
 
-    <div id="content" class="site">
-
-      {{ content }}
-
-    </div>
-  </div>
-</body>
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+  </script>
 </html>
