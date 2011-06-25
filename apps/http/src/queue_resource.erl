@@ -26,8 +26,9 @@ from_json(ReqData, Ctx) ->
     mqhub:push(Queue, Body),
     {ok, ReqData, Ctx}.
 
-to_json(ReqData, Ctx) ->
-    Queue = list_to_binary(wrq:path(ReqData)),
+to_json(ReqData0, Ctx) ->
+    Queue = list_to_binary(wrq:path(ReqData0)),
+    ReqData = wrq:set_resp_header("Pragma", "no-cache", ReqData0),
     case mqhub:pull(Queue) of
         {ok, Messages} -> {mochijson2:encode(Messages), ReqData, Ctx};
         {error, Reason} -> {atom_to_list(Reason), ReqData, Ctx}

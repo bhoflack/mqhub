@@ -27,8 +27,9 @@ from_json(ReqData, Ctx) ->
     mqhub:subscribe(Topic, Listener),
     {ok, ReqData, Ctx}.
 
-to_json(ReqData, Ctx) ->
-    Topic = topic(ReqData),
+to_json(ReqData0, Ctx) ->
+    Topic = topic(ReqData0),
+    ReqData = wrq:set_resp_header("Pragma", "no-cache", ReqData0),
     {ok, Listeners} = mqhub:listeners(Topic),
     {mochijson2:encode(Listeners), ReqData, Ctx}.
 
