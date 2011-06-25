@@ -1,0 +1,37 @@
+body {
+	margin-right: 150px;
+	margin-left: 150px;
+	body: font-family: Ideal, Fit, Common, Generic;
+	font-size: 14px;
+	background-color: #f5fffb;
+}
+
+#log {
+  width: 90%;
+  height: 75%;
+  padding: 1em 1em 1em 1em;
+  font-family: monospace;
+  border: 2px solid #595540;
+}
+
+#log .response .queue {
+  color: #050769;
+  font-size: 0.8em;
+}
+
+#toolbar {
+  width: 750px;
+  margin: auto;
+  padding: 0em;
+}
+
+#toolbar #input {
+    padding: 0.5em;
+    width: 100%;
+    font-size: 1.5em;
+    font-family: monospace;
+    border: 5px solid #595540;
+    Background-image: url("/images/prompt.png");
+    background-repeat: no-repeat;
+    padding-left: 45px;
+}
