@@ -3,6 +3,7 @@
          allowed_methods/2,
          content_types_accepted/2,
          content_types_provided/2,
+         process_post/2,
          from_json/2,
          to_json/2]).
 
@@ -12,7 +13,7 @@ init([]) ->
     {ok, []}.
 
 allowed_methods(ReqData, Ctx) ->
-    {['PUT', 'GET', 'DELETE'], ReqData, Ctx}.
+    {['PUT', 'POST', 'GET', 'DELETE'], ReqData, Ctx}.
 
 content_types_accepted(ReqData, State) ->
     {[{"application/json", from_json}], ReqData, State}.
@@ -20,12 +21,17 @@ content_types_accepted(ReqData, State) ->
 content_types_provided(ReqData, State) ->
     {[{"application/json", to_json}], ReqData, State}.
 
+process_post(ReqData, Ctx) ->
+    add_listener(ReqData, Ctx, true).
 
 from_json(ReqData, Ctx) ->
+    add_listener(ReqData, Ctx, ok).
+
+add_listener(ReqData, Ctx, Response) ->
     Topic = topic(ReqData),
     Listener = wrq:req_body(ReqData),
     mqhub:subscribe(Topic, Listener),
-    {ok, ReqData, Ctx}.
+    {Response, ReqData, Ctx}.
 
 to_json(ReqData0, Ctx) ->
     Topic = topic(ReqData0),
