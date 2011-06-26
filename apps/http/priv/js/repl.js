@@ -5,18 +5,22 @@ function eval_command(command) {
   historyValues.push(command);
   historyCursor = historyValues.length;
 
-  var p = /(\w*) \"([\w/]*)\"( \"(.*)\")?/;
+  var p = /([\w-]*) \"([\w/]*)\"( \"(.*)\")?/;
   var res = command.match(p);
 
   if (res != null) {
     var op = res[1];
     var queue = res[2];
-    var msg = res[4];
+    var arg = res[4];
 
     if (op == "push") {
-      push(queue, msg);
+      push(queue, arg);
     } else if (op == "pull") {
       pull(queue);
+    } else if (op == "add-listener") {
+      add_listener(queue, arg);
+    } else if (op == "remove-listener") {
+      remove_listener(queue, arg);
     } else {
       alert("Don't know command " + op);
     }
@@ -43,6 +47,21 @@ function escapeHtml(str) {
   str = str.replace(/\n/g, "<br>");
 
   return str;
+}
+
+function add_listener(topic, listener) {
+  $.post(topic + "/listener", listener, function(data) {
+    append_log("add-listener \"" + topic + "\" \"" + listener + "\"", "");
+  });
+}
+
+
+function remove_listener(topic, listener) {
+  $.ajax(topic + "/listener" + listener,
+    { type: 'DELETE',
+      success: function(data) {
+      append_log("add-listener \"" + topic + "\" \"" + listener + "\"", "");
+    }});
 }
 
 function push(queue, message) {
