@@ -197,6 +197,8 @@ body {
   border: 1px solid #595540;
   margin: auto;
   overflow: auto;
+  background-color: #161616;
+  color: #e1e1e2;
 }
 
 #log .response .queue {
