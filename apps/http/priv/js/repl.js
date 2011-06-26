@@ -50,30 +50,28 @@ function escapeHtml(str) {
 }
 
 function add_listener(topic, listener) {
-  $.post(topic + "/listener", listener, function(data) {
+  SonicQueue.add_listener(topic, listener, function(data) {
     append_log("add-listener \"" + topic + "\" \"" + listener + "\"", "");
   });
 }
 
 
 function remove_listener(topic, listener) {
-  $.ajax(topic + "/listener" + listener,
-    { type: 'DELETE',
-      success: function(data) {
+  SonicQueue.remove_listener(topic, listener, function(data) {
       append_log("add-listener \"" + topic + "\" \"" + listener + "\"", "");
-    }});
+  });
 }
 
 function push(queue, message) {
-  $.post(queue, message, function(data) {
+  SonicQueue.push(queue, message, function(data) {
     append_log("push \"" + queue + "\" \"" + message + "\"" , "");
   });
 }
 
 function pull(queue) {
-  $.get(queue, function(data) {
+  SonicQueue.pull(queue, function(data) {
     append_log("pull \"" + queue + "\"", data[0]);
-  }, 'json');
+  });
 }
 
 function cursorToEnd(input, text) {
