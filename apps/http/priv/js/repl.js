@@ -23,10 +23,17 @@ function eval_command(command) {
   }
 
   $("#input").val('');
+  scrollDown();
 }
 
-function append_log(queue, msg) {
-  $("#log").append("<div class=\"response\"><span class=\"queue\">" + queue + "</span>: " + msg + "</div>");
+function scrollDown() {
+  $("#log").attr({ scrollTop: $("#log").attr("scrollHeight") });
+};
+
+function append_log(c, r) {
+  var template = $("#command-template").html();
+  var html = Mustache.to_html(template, {command:c, response:r});
+  $("#log").append(html);
 }
 
 function escapeHtml(str) {
@@ -40,13 +47,13 @@ function escapeHtml(str) {
 
 function push(queue, message) {
   $.post(queue, message, function(data) {
-    append_log(queue, "pushed message " + message);
+    append_log("push \"" + queue + "\" \"" + message + "\"" , "");
   });
 }
 
 function pull(queue) {
   $.get(queue, function(data) {
-    append_log(queue, "received message " + data[0]);
+    append_log("pull \"" + queue + "\"", data[0]);
   }, 'json');
 }
 

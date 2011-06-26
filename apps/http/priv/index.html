@@ -1,12 +1,17 @@
-<html>
+<!doctype html>
   <head>
     <title>sonicQueue console</title>
 
     <link href='css/style.css' rel='stylesheet' />
   </head>
   <body>
+    <header>
+      sonic<em>Queue</em>
+    </header>
     <div id="log">
-
+      <p>Welcome to the sonicQueue console!</p>
+      <p>Try pushing and pulling data to queues and topics by executing <pre>push "/test/queue/welcome" "hello world"</pre> and <pre>pull "/test/queue/welcome"</pre></p>
+      <hr>
     </div>
 
     <div id="toolbar">
@@ -15,6 +20,7 @@
 
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="application/x-javascript"></script>
     <script src="http://documentcloud.github.com/underscore/underscore-min.js" type="application/x-javascript"></script>
+    <script src="js/mustache.js" type="application/javascript"></script>
     <script src="js/repl.js" type="application/javascript"></script>
 
       <script>
@@ -24,5 +30,12 @@
     s.parentNode.insertBefore(g,s)}(document,"script"));
       </script>
   </body>
+
+  <script id="command-template" type="template/html">
+    <div class="command">
+      <p>> {{ command }}</p>
+      <p class="response">{{ response }}</p>
+    </div>
+  </script>
 </html>
 
